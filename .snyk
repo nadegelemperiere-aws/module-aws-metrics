@@ -1,0 +1,41 @@
+version: v1.19.0
+ignore:
+  SNYK-CC-TF-74:
+    - 'test/data/alarms/main.tf > *':
+        reason: Credentials are retrieved from the vault and the tfvars file is only available in runners
+        expires: 2030-03-11T00:00:00.000Z
+        created: 2022-03-11T18:24:00.000Z
+    - 'test/data/metrics/main.tf > *':
+        reason: Credentials are retrieved from the vault and the tfvars file is only available in runners
+        expires: 2030-03-11T00:00:00.000Z
+        created: 2022-03-11T18:24:00.000Z
+    - 'test/data/notifications/main.tf > *':
+        reason: Credentials are retrieved from the vault and the tfvars file is only available in runners
+        expires: 2030-03-11T00:00:00.000Z
+        created: 2022-03-11T18:24:00.000Z
+  SNYK-CC-AWS-415:
+    - 'test/data/alarms/main.tf > *':
+        reason: Loggroup is only there for test purpose, and therefore does not need to be encrypted
+        expires: 2030-03-11T00:00:00.000Z
+        created: 2022-03-13T15:12:00.000Z
+    - 'test/data/metrics/main.tf > *':
+        reason: Loggroup is only there for test purpose, and therefore does not need to be encrypted
+        expires: 2030-03-11T00:00:00.000Z
+        created: 2022-03-13T15:12:00.000Z
+    - 'test/data/notifications/main.tf > *':
+        reason: Loggroup is only there for test purpose, and therefore does not need to be encrypted
+        expires: 2030-03-11T00:00:00.000Z
+        created: 2022-03-13T15:12:00.000Z
+  SNYK-CC-TF-134:
+    - 'test/data/alarms/main.tf > *':
+        reason: Loggroup is only there for test purpose, and therefore does not need to get a retention period
+        expires: 2030-03-11T00:00:00.000Z
+        created: 2022-03-13T15:12:00.000Z
+    - 'test/data/metrics/main.tf > *':
+        reason: Loggroup is only there for test purpose, and therefore does not need to get a retention period
+        expires: 2030-03-11T00:00:00.000Z
+        created: 2022-03-13T15:12:00.000Z
+    - 'test/data/notifications/main.tf > *':
+        reason: Loggroup is only there for test purpose, and therefore does not need to get a retention period
+        expires: 2030-03-11T00:00:00.000Z
+        created: 2022-03-13T15:12:00.000Z
