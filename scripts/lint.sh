@@ -18,7 +18,7 @@ script=$(readlink -f $0)
 scriptpath=`dirname $script`
 
 # Launching tflint
-cd ${scriptpath}/../
+cd ${scriptpath}/..
 tflint --init
 tflint --format sarif
 cd ${scriptpath}
