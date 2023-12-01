@@ -1,7 +1,5 @@
 # -------------------------------------------------------
-# TECHNOGIX
-# -------------------------------------------------------
-# Copyright (c) [2021] Technogix.io
+# Copyright (c) [2021] Nadege Lemperiere
 # All rights reserved
 # -------------------------------------------------------
 # Module to deploy the metrics and alarms associated to
@@ -47,7 +45,7 @@ resource "aws_cloudwatch_metric_alarm" "alarm" {
   	statistic           = var.metrics_to_alarms[count.index].statistic
   	threshold           = var.metrics_to_alarms[count.index].threshold
   	alarm_description   = var.metrics_to_alarms[count.index].description
-	alarm_actions		= length("${var.emails}") != 0 ? [aws_sns_topic.alarm[0].arn] : []
+	alarm_actions		= length(var.emails) != 0 ? [aws_sns_topic.alarm[0].arn] : []
 
     tags = {
 		Name           	= "${var.project}.${var.environment}.${var.module}.${var.name}.alarm.${count.index}"
@@ -123,9 +121,9 @@ resource "aws_sns_topic_policy" "alarm" {
       			Principal 	=  {
 					"Service": [ "cloudwatch.amazonaws.com" ]
 				}
-      			Effect 	= "Allow"
-      			Action  = ["sns:Publish"]
-      			Resource: "${aws_sns_topic.alarm[0].arn}"
+      			Effect 	    = "Allow"
+      			Action      = ["sns:Publish"]
+      			Resource    = aws_sns_topic.alarm[0].arn
     		}
   		]
 	})

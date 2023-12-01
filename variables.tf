@@ -1,59 +1,65 @@
 # -------------------------------------------------------
-# TECHNOGIX
-# -------------------------------------------------------
-# Copyright (c) [2021] Technogix.io
+# Copyright (c) [2021] Nadege Lemperiere
 # All rights reserved
 # -------------------------------------------------------
 # Module to deploy the metrics and alarms associated to
 # an AWS infrastructure
 # -------------------------------------------------------
 # Nadège LEMPERIERE, @14 november 2021
-# Latest revision: 14 november 2021
+# Latest revision: 30 november 2023
 # -------------------------------------------------------
 
 # -------------------------------------------------------
 # Contact e-mail for this deployment
 # -------------------------------------------------------
 variable "email" {
-	type 	= string
+	type 	 = string
+	nullable = false
 }
 
 # -------------------------------------------------------
 # Environment for this deployment (prod, preprod, ...)
 # -------------------------------------------------------
 variable "environment" {
-	type 	= string
+	type 	 = string
+	nullable = false
 }
 
 # -------------------------------------------------------
 # Topic context for this deployment
 # -------------------------------------------------------
 variable "project" {
-	type    = string
+	type     = string
+	nullable = false
 }
 variable "module" {
-	type 	= string
+	type 	 = string
+	nullable = false
 }
 variable "name" {
-	type = string
+	type     = string
+	nullable = false
 }
 
 # -------------------------------------------------------
 # Solution version
 # -------------------------------------------------------
 variable "git_version" {
-	type    = string
-	default = "unmanaged"
+	type     = string
+	default  = "unmanaged"
+	nullable = false
 }
 
 # -------------------------------------------------------
 # AWS account in which the permission shall be given
 # -------------------------------------------------------
 variable "account" {
-	type = string
+	type     = string
+	nullable = false
 }
 variable "service_principal" {
-	type = string
+	type     = string
+	nullable = false
 }
 
 # -------------------------------------------------------
@@ -64,6 +70,7 @@ variable "cloudwatch" {
 		name 	= string
 		role	= string
 	})
+	nullable = false
 }
 
 # -------------------------------------------------------
@@ -79,6 +86,7 @@ variable "logs_to_metrics" {
 		dimensions		= map(string)
     }))
 	default 			= []
+	nullable            = false
 }
 
 # -------------------------------------------------------
@@ -96,6 +104,7 @@ variable "metrics_to_alarms" {
 		description		= string
     }))
 	default 			= []
+	nullable            = false
 }
 
 # -------------------------------------------------------
@@ -104,4 +113,5 @@ variable "metrics_to_alarms" {
 variable "emails" {
 	type 				= list(string)
 	default 			= []
+	nullable            = false
 }
