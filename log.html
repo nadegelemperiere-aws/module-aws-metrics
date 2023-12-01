@@ -5,7 +5,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="-1">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta content="Robot Framework 4.1.3 (Python 3.10.2 on linux)" name="Generator">
+<meta content="Robot Framework 6.1.1 (Python 3.12.0 on linux)" name="Generator">
 <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKcAAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAAqAAAAAAAAAAAAAAAAAAAALIAAAD/AAAA4AAAANwAAADcAAAA3AAAANwAAADcAAAA3AAAANwAAADcAAAA4AAAAP8AAACxAAAAAAAAAKYAAAD/AAAAuwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC/AAAA/wAAAKkAAAD6AAAAzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN8AAAD/AAAA+gAAAMMAAAAAAAAAAgAAAGsAAABrAAAAawAAAGsAAABrAAAAawAAAGsAAABrAAAADAAAAAAAAADaAAAA/wAAAPoAAADDAAAAAAAAAIsAAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAANEAAAAAAAAA2gAAAP8AAAD6AAAAwwAAAAAAAAAAAAAAMgAAADIAAAAyAAAAMgAAADIAAAAyAAAAMgAAADIAAAAFAAAAAAAAANoAAAD/AAAA+gAAAMMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADaAAAA/wAAAPoAAADDAAAAAAAAADwAAAB8AAAAAAAAAGAAAABcAAAAAAAAAH8AAABKAAAAAAAAAAAAAAAAAAAA2gAAAP8AAAD6AAAAwwAAAAAAAADCAAAA/wAAACkAAADqAAAA4QAAAAAAAAD7AAAA/wAAALAAAAAGAAAAAAAAANoAAAD/AAAA+gAAAMMAAAAAAAAAIwAAAP4AAAD/AAAA/wAAAGAAAAAAAAAAAAAAAMkAAAD/AAAAigAAAAAAAADaAAAA/wAAAPoAAADDAAAAAAAAAAAAAAAIAAAAcAAAABkAAAAAAAAAAAAAAAAAAAAAAAAAEgAAAAAAAAAAAAAA2gAAAP8AAAD7AAAAywAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN4AAAD/AAAAqwAAAP8AAACvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALIAAAD/AAAAsgAAAAAAAAC5AAAA/wAAAMoAAADAAAAAwAAAAMAAAADAAAAAwAAAAMAAAADAAAAAwAAAAMkAAAD/AAAAvAAAAAAAAAAAAAAAAAAAAKwAAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAA/wAAAP8AAAD/AAAArQAAAAAAAAAAwAMAAIABAAAf+AAAP/wAAD/8AAAgBAAAP/wAAD/8AAA//AAAJIwAADHEAAA//AAAP/wAAB/4AACAAQAAwAMAAA==">
 <style media="all" type="text/css">
 /* Generic and misc styles */
@@ -319,6 +319,9 @@ th.stats-col-graph:hover {
     padding: 3px;
     cursor: default;
 }
+.element-header .label {
+    margin-right: 0.5em;
+}
 .name {
     font-weight: bold;
 }
@@ -557,6 +560,9 @@ function toggleSuite(suiteId) {
 }
 function toggleTest(testId) {
     toggleElement(testId, ['keyword']);
+    var test = window.testdata.findLoaded(testId);
+    if (test.status == "FAIL" || test.status == "SKIP")
+        expandFailed(test);
 }
 function toggleKeyword(kwId) {
     toggleElement(kwId, ['keyword']);
@@ -620,7 +626,7 @@ function loadAndExpandElementIds(ids) {
     }
 }
 function expandFailed(element) {
-    if (element.status == "FAIL") {
+    if (element.status == "FAIL" || (element.type == "test" && element.status == "SKIP")) {
         window.elementsToExpand = [element];
         window.expandDecider = function (e) {
             return e.status == "FAIL";
@@ -966,6 +972,7 @@ window.model = (function () {
     }
     function Keyword(data) {
         var kw = createModelObject(data);
+        var flatTypes = ['RETURN', 'BREAK', 'CONTINUE'];
         kw.libname = data.libname;
         kw.fullName = (kw.libname ? kw.libname + '.' : '') + kw.name;
         kw.type = data.type;
@@ -1350,8 +1357,8 @@ window.testdata = function () {
     var _statistics = null;
     var LEVELS = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'FAIL', 'SKIP'];
     var STATUSES = ['FAIL', 'PASS', 'SKIP', 'NOT RUN'];
-    var KEYWORD_TYPES = ['KEYWORD', 'SETUP', 'TEARDOWN', 'FOR', 'VAR', 'IF', 'ELSE IF', 'ELSE'];
-    var MESSAGE_TYPE = 8;
+    var KEYWORD_TYPES = ['KEYWORD', 'SETUP', 'TEARDOWN', 'FOR', 'ITERATION', 'IF', 'ELSE IF', 'ELSE', 'RETURN',
+                         'TRY', 'EXCEPT', 'FINALLY', 'WHILE', 'CONTINUE', 'BREAK', 'ERROR'];
     function addElement(elem) {
         if (!elem.id)
             elem.id = uniqueId();
@@ -1372,10 +1379,10 @@ window.testdata = function () {
                 elapsed];
     }
     function createMessage(element, strings) {
-        return model.Message(LEVELS[element[2]],
-                             util.timestamp(element[1]),
-                             strings.get(element[3]),
-                             strings.get(element[4]));
+        return model.Message(LEVELS[element[1]],
+                             util.timestamp(element[0]),
+                             strings.get(element[2]),
+                             strings.get(element[3]));
     }
     function parseStatus(stats) {
         return STATUSES[stats[0]];
@@ -1386,7 +1393,7 @@ window.testdata = function () {
         };
     }
     function createBodyItem(parent, element, strings, index) {
-        if (element[0] == MESSAGE_TYPE)
+        if (element.length < 5)
             return createMessage(element, strings);
         var messages = util.filter(parent.children(), function (child) {
             return child.type == 'message';
@@ -1799,25 +1806,25 @@ function stopPropagation(event) {
 window.output = {};
 </script>
 <script type="text/javascript">
-window.output["suite"] = [1,2,3,0,[],[1,0,65742],[[4,5,6,7,[],[1,19,65721],[],[[8,0,9,[],[1,252,672],[[0,10,11,0,12,13,14,0,[1,252,1],[]],[0,15,16,0,17,18,19,0,[1,253,154],[]],[0,15,16,0,17,20,21,0,[1,408,146],[]],[0,15,16,0,17,22,23,0,[1,554,144],[]],[0,15,16,0,17,24,25,0,[1,699,148],[]],[0,26,27,0,28,29,30,0,[1,847,1],[]],[0,31,32,0,33,34,0,0,[1,848,0],[]],[0,35,36,0,37,38,0,0,[1,848,44],[]],[0,39,40,0,37,38,0,0,[1,892,31],[]],[0,41,27,0,42,30,0,0,[1,923,1],[]],[0,41,27,0,42,25,0,0,[1,924,0],[]]]],[43,0,44,[],[1,925,15496],[[0,45,32,0,46,47,0,0,[1,925,9430],[]],[0,48,32,0,49,50,51,0,[1,10355,3],[]],[0,52,53,0,0,54,55,0,[1,10358,3],[]],[0,56,36,0,57,58,0,0,[1,10361,405],[]],[2,59,32,0,60,47,0,0,[1,10766,5655],[]]]],[61,0,62,[],[1,16422,16178],[[0,45,32,0,46,63,0,0,[1,16423,9478],[]],[0,48,32,0,49,64,51,0,[1,25901,1],[]],[0,65,53,0,0,54,55,0,[1,25902,2],[]],[0,56,36,0,57,58,0,0,[1,25904,322],[]],[0,66,36,0,67,68,0,0,[1,26226,354],[]],[2,59,32,0,60,63,0,0,[1,26581,6019],[]]]],[69,0,70,[],[1,32601,33138],[[0,45,32,0,46,71,0,0,[1,32601,24927],[]],[0,48,32,0,49,72,51,0,[1,57528,2],[]],[0,73,53,0,0,74,55,0,[1,57530,3],[]],[0,56,36,0,57,58,0,0,[1,57533,387],[]],[0,66,36,0,67,68,0,0,[1,57921,410],[]],[0,75,40,0,76,77,0,0,[1,58331,425],[]],[0,78,40,0,79,80,0,0,[1,58756,154],[]],[2,59,32,0,60,71,0,0,[1,58911,6828],[]]]]],[],[4,4,0,0]]],[],[],[4,4,0,0]];
+window.output["suite"] = [1,2,3,0,[],[1,0,83467],[[4,5,6,7,[],[1,16,83450],[],[[8,0,9,[],[1,279,4075],[[0,10,11,0,12,13,14,0,[1,280,0],[]],[0,15,16,0,17,18,19,0,[1,281,957],[]],[0,15,16,0,17,20,21,0,[1,1238,949],[]],[0,15,16,0,17,22,23,0,[1,2187,990],[]],[0,15,16,0,17,24,25,0,[1,3177,949],[]],[0,26,27,0,28,29,30,0,[1,4127,0],[]],[0,31,32,0,33,34,0,0,[1,4127,0],[]],[0,35,36,0,37,38,0,0,[1,4127,164],[]],[0,39,40,0,37,38,0,0,[1,4291,62],[]],[0,41,27,0,42,30,0,0,[1,4353,1],[]],[0,41,27,0,42,25,0,0,[1,4354,0],[]]]],[43,0,44,[],[1,4354,16748],[[0,45,32,0,46,47,0,0,[1,4355,8755],[]],[0,48,32,0,49,50,51,0,[1,13110,1],[]],[0,52,53,0,0,54,55,0,[1,13111,2],[]],[0,56,36,0,57,58,0,0,[1,13113,831],[]],[2,59,32,0,60,47,0,0,[1,13944,7157],[]]]],[61,0,62,[],[1,21102,19775],[[0,45,32,0,46,63,0,0,[1,21103,9267],[]],[0,48,32,0,49,64,51,0,[1,30370,2],[]],[0,65,53,0,0,54,55,0,[1,30372,1],[]],[0,56,36,0,57,58,0,0,[1,30373,815],[]],[0,66,36,0,67,68,0,0,[1,31188,982],[]],[2,59,32,0,60,63,0,0,[1,32170,8706],[]]]],[69,0,70,[],[1,40877,42588],[[0,45,32,0,46,71,0,0,[1,40878,27488],[]],[0,48,32,0,49,72,51,0,[1,68366,1],[]],[0,73,53,0,0,74,55,0,[1,68368,1],[]],[0,56,36,0,57,58,0,0,[1,68369,831],[]],[0,66,36,0,67,68,0,0,[1,69200,835],[]],[0,75,40,0,76,77,0,0,[1,70035,765],[]],[0,78,40,0,79,80,0,0,[1,70801,442],[]],[2,59,32,0,60,71,0,0,[1,71243,12222],[]]]]],[],[4,4,0,0]]],[],[],[4,4,0,0]];
 </script>
 <script type="text/javascript">
 window.output["strings"] = [];
 </script>
 <script type="text/javascript">
-window.output["strings"] = window.output["strings"].concat(["*","*Cases","*/github/workspace/module/test/cases","*../module/test/cases","*Scenarii","*/github/workspace/module/test/cases/scenarii.robot","*../module/test/cases/scenarii.robot","*<p>A test case to check metrics creation\x3c/p>","*Prepare environment","*<p>Retrieve principal credential from database and initialize python tests keywords\x3c/p>","*Get Environment Variable","*OperatingSystem","*<p>Returns the value of an environment variable with the given name.\x3c/p>","*${KEEPASS_KEY_ENV}","*${keepass_key}","*Load Keepass Database Secret","*technogix_iac_keywords.keepass","eNplkMsKgzAQRff9ilk1CgX3rfUjui1djDq2QWNkMgr5+0aDj9JZBOYy51xIPhQPEtY0ESA4qpgEGrYmbC3RgM5BjYIlOsqzoTjlHw7PUKwhQOKEU7j+nUOjOwKxwGvBhN1I0d6Shzg77iMRHLbSKFTP8GajXtj/EDE5FizqjUgaywYFnsp4dVHLuXrB/fyWG2TGZ0uSAkrAy1FoM+/J0a77WDn/wxftTmqN","*${KEEPASS_DATABASE}, ${keepass_key}, ${KEEPASS_PRINCIPAL_KEY_ENTRY}, username","*${principal_access}","*${KEEPASS_DATABASE}, ${keepass_key}, ${KEEPASS_PRINCIPAL_KEY_ENTRY}, password","*${principal_secret}","*${KEEPASS_DATABASE}, ${keepass_key}, ${KEEPASS_PRINCIPAL_USER_ENTRY}, username","*${principal_name}","*${KEEPASS_DATABASE}, ${keepass_key}, ${KEEPASS_ACCOUNT_ENTRY}, password","*${ACCOUNT}","*Create Dictionary","*BuiltIn","*<p>Creates and returns a dictionary based on the given <code>items\x3c/code>.\x3c/p>","*account=\"${ACCOUNT}\", service_principal=\"${principal_name}\"","*${TF_PARAMETERS}","*Initialize Terraform","*technogix_iac_keywords.terraform","eNp9j7FuwzAMRPd+xY3tlL0wDGTMEKSAh46FKtMxUUEUSDpG+/WVnRjJFA6CcNK9OzalPWR2Don/CD/0O4v2mNlH7D87RMkDnycNzpLxoTJwIogixEhmX9WwM4pKvlxhY0gJ34SicuGe+mZX2pdm1HqUttzsdV7N9Q3v14zE2J6Giu66EyYjNYTJR8rO8RrPGWG2h+g7ZpWW+ivhsD8+JTw03gjdKq2EYCaRg1MPF1R/bUcXlmmLXn4ti/0DvXJwRw==","*${REGION}, ${principal_access}, ${principal_secret}","*Initialize Cloudwatch","*technogix_iac_keywords.cloudwatch","eNp9jzGPwjAMhff7FR6PiR1VlRgZEEgdbkQhdalFFEe22wp+PWmgAt1Ahih6zvvec5XqXSQjF+iOcMXbxNLCRNbD9q8Bz7GjyyDOiCMchTsKCCzgvEfVUzasFb2gzU/Q3oUAZ4QkPFKLbbVO9U/VS75SnV72fH7VZAWbZ0YgWEZdRjfNAQZFUXCD9RiN/DOeIrhJP6LfmCLN9Qtht91/JXw0XghNkQrBqbInZ9iCMWR/bocj8bBEl1+Cl5n4f5mXnI25wLz9A8sVe64=","*None, ${principal_access}, ${principal_secret}, ${REGION}","*Initialize SNS","*technogix_iac_keywords.sns","*Set Global Variable","*<p>Makes a variable available globally in all tests and suites.\x3c/p>","*Create Metrics","*<p>Create Metrics\x3c/p>","*Launch Terraform Deployment","*<p>Launch terraform deployment\x3c/p>\n<hr>\n<p>directory (str) : Deployment directory variables (str) : List of variables to add to the deployment in a tfvars file\x3c/p>","*/github/workspace/module/test/cases/../data/metrics, ${TF_PARAMETERS}","*Load Terraform States","*<p>Load terraform states from directory\x3c/p>\n<hr>\n<p>directory (str) : Deployment directory env       (str) : Retrieve only states from files .env.tfstate\x3c/p>","*/github/workspace/module/test/cases/../data/metrics","*${states}","*Load Metrics Test Data","*data","eNpTqS4uSSxJLY5WBxIl6rHR6vmlJQWlJcUgZk5+enpRfmkBiF2WmFOaqh5bq6Oggk9LbmpJUWZyMQk6EnMSi3JJ0ZCXX5KZlpmcWJKZn0eKvuzUSmTVAKQRWsc=","*${specs}","*Metrics Shall Exist And Match","*<p>Test that a metric exists that matches specifications\x3c/p>\n<hr>\n<p>specs    (list) : List of specifications to consider\x3c/p>","*${specs['metrics']}","*Destroy Terraform Deployment","*<p>Destroy terraform deployment\x3c/p>\n<hr>\n<p>directory (str) : Deployment directory variables (str) : List of variables to add to the deployment in a tfvars file\x3c/p>","*Create Alarms","*<p>Create Metrics and Alarms\x3c/p>","*/github/workspace/module/test/cases/../data/alarms, ${TF_PARAMETERS}","*/github/workspace/module/test/cases/../data/alarms","*Load Alarms Test Data","*Alarms Shall Exist And Match","*<p>Test that an alarm exists that matches specifications\x3c/p>\n<hr>\n<p>specs    (list) : List of specifications to consider\x3c/p>","*${specs['alarms']}","*Create Notifications","*<p>Create Metrics, Alarms and Notification\x3c/p>","*/github/workspace/module/test/cases/../data/notifications, ${TF_PARAMETERS}","*/github/workspace/module/test/cases/../data/notifications","*Load Notifications Test Data","eNpTqS4uSSxJLY5WBxIl6rHR6vmlJQWlJcUgZk5+enpRfmkBiF2WmFOaqh5bq6Oggk9LbmpJUWZyMQk6EnMSi3JJ0ZCXX5KZlpmcWJKZn0eKvuzUSnTVjs7O/qF+IbUA+SlePA==","*Subscriptions Shall Exist And Match","*<p>Check that a subscription exists that matches the specifications\x3c/p>\n<hr>\n<p>specs    (list) : List of specifications to consider\x3c/p>","*${specs['subscriptions']}","*Topics Shall Exist And Match","*<p>Check that a topic exists that matches the specifications\x3c/p>\n<hr>\n<p>specs    (list) : List of specifications to consider\x3c/p>","*${specs['topics']}"]);
+window.output["strings"] = window.output["strings"].concat(["*","*Cases","*/github/workspace/module/test/cases","*../module/test/cases","*Scenarii","*/github/workspace/module/test/cases/scenarii.robot","*../module/test/cases/scenarii.robot","*<p>A test case to check metrics creation\x3c/p>","*Prepare environment","*<p>Retrieve principal credential from database and initialize python tests keywords\x3c/p>","*Get Environment Variable","*OperatingSystem","*<p>Returns the value of an environment variable with the given name.\x3c/p>","*${KEEPASS_KEY_ENV}","*${keepass_key}","*Load Keepass Database Secret","*aws_iac_keywords.keepass","eNplkMsKgzAQRff9ilk1CgX3rfUjui1djDq2QWNkMgr5+0aDj9JZBOYy51xIPhQPEtY0ESA4qpgEGrYmbC3RgM5BjYIlOsqzoTjlHw7PUKwhQOKEU7j+nUOjOwKxwGvBhN1I0d6Shzg77iMRHLbSKFTP8GajXtj/EDE5FizqjUgaywYFnsp4dVHLuXrB/fyWG2TGZ0uSAkrAy1FoM+/J0a77WDn/wxftTmqN","*${KEEPASS_DATABASE}, ${keepass_key}, ${KEEPASS_PRINCIPAL_KEY_ENTRY}, username","*${principal_access}","*${KEEPASS_DATABASE}, ${keepass_key}, ${KEEPASS_PRINCIPAL_KEY_ENTRY}, password","*${principal_secret}","*${KEEPASS_DATABASE}, ${keepass_key}, ${KEEPASS_PRINCIPAL_USER_ENTRY}, username","*${principal_name}","*${KEEPASS_DATABASE}, ${keepass_key}, ${KEEPASS_ACCOUNT_ENTRY}, password","*${ACCOUNT}","*Create Dictionary","*BuiltIn","*<p>Creates and returns a dictionary based on the given <code>items\x3c/code>.\x3c/p>","*account=\"${ACCOUNT}\", service_principal=\"${principal_name}\"","*${TF_PARAMETERS}","*Initialize Terraform","*aws_iac_keywords.terraform","eNp9j7FuwzAMRPd+xY3tlL0wDGTMEKSAh46FKtMxUUEUSDpG+/WVnRjJFA6CcNK9OzalPWR2Don/CD/0O4v2mNlH7D87RMkDnycNzpLxoTJwIogixEhmX9WwM4pKvlxhY0gJ34SicuGe+mZX2pdm1HqUttzsdV7N9Q3v14zE2J6Giu66EyYjNYTJR8rO8RrPGWG2h+g7ZpWW+ivhsD8+JTw03gjdKq2EYCaRg1MPF1R/bUcXlmmLXn4ti/0DvXJwRw==","*${REGION}, ${principal_access}, ${principal_secret}","*Initialize Cloudwatch","*aws_iac_keywords.cloudwatch","eNp9jzGPwjAMhff7FR6PiR1VlRgZEEgdbkQhdalFFEe22wp+PWmgAt1Ahih6zvvec5XqXSQjF+iOcMXbxNLCRNbD9q8Bz7GjyyDOiCMchTsKCCzgvEfVUzasFb2gzU/Q3oUAZ4QkPFKLbbVO9U/VS75SnV72fH7VZAWbZ0YgWEZdRjfNAQZFUXCD9RiN/DOeIrhJP6LfmCLN9Qtht91/JXw0XghNkQrBqbInZ9iCMWR/bocj8bBEl1+Cl5n4f5mXnI25wLz9A8sVe64=","*None, ${principal_access}, ${principal_secret}, ${REGION}","*Initialize SNS","*aws_iac_keywords.sns","*Set Global Variable","*<p>Makes a variable available globally in all tests and suites.\x3c/p>","*Create Metrics","*<p>Create Metrics\x3c/p>","*Launch Terraform Deployment","*<p>Launch terraform deployment\x3c/p>\n<hr>\n<p>directory (str) : Deployment directory variables (str) : List of variables to add to the deployment in a tfvars file\x3c/p>","*/github/workspace/module/test/cases/../data/metrics, ${TF_PARAMETERS}","*Load Terraform States","*<p>Load terraform states from directory\x3c/p>\n<hr>\n<p>directory (str) : Deployment directory env       (str) : Retrieve only states from files .env.tfstate\x3c/p>","*/github/workspace/module/test/cases/../data/metrics","*${states}","*Load Metrics Test Data","*data","eNpTqS4uSSxJLY5WBxIl6rHR6vmlJQWlJcUgZk5+enpRfmkBiF2WmFOaqh5bq6Oggk9LbmpJUWZyMQk6EnMSi3JJ0ZCXX5KZlpmcWJKZn0eKvuzUSmTVAKQRWsc=","*${specs}","*Metrics Shall Exist And Match","*<p>Test that a metric exists that matches specifications\x3c/p>\n<hr>\n<p>specs    (list) : List of specifications to consider\x3c/p>","*${specs['metrics']}","*Destroy Terraform Deployment","*<p>Destroy terraform deployment\x3c/p>\n<hr>\n<p>directory (str) : Deployment directory variables (str) : List of variables to add to the deployment in a tfvars file\x3c/p>","*Create Alarms","*<p>Create Metrics and Alarms\x3c/p>","*/github/workspace/module/test/cases/../data/alarms, ${TF_PARAMETERS}","*/github/workspace/module/test/cases/../data/alarms","*Load Alarms Test Data","*Alarms Shall Exist And Match","*<p>Test that an alarm exists that matches specifications\x3c/p>\n<hr>\n<p>specs    (list) : List of specifications to consider\x3c/p>","*${specs['alarms']}","*Create Notifications","*<p>Create Metrics, Alarms and Notification\x3c/p>","*/github/workspace/module/test/cases/../data/notifications, ${TF_PARAMETERS}","*/github/workspace/module/test/cases/../data/notifications","*Load Notifications Test Data","eNpTqS4uSSxJLY5WBxIl6rHR6vmlJQWlJcUgZk5+enpRfmkBiF2WmFOaqh5bq6Oggk9LbmpJUWZyMQk6EnMSi3JJ0ZCXX5KZlpmcWJKZn0eKvuzUSnTVjs7O/qF+IbUA+SlePA==","*Subscriptions Shall Exist And Match","*<p>Check that a subscription exists that matches the specifications\x3c/p>\n<hr>\n<p>specs    (list) : List of specifications to consider\x3c/p>","*${specs['subscriptions']}","*Topics Shall Exist And Match","*<p>Check that a topic exists that matches the specifications\x3c/p>\n<hr>\n<p>specs    (list) : List of specifications to consider\x3c/p>","*${specs['topics']}"]);
 </script>
 <script type="text/javascript">
-window.output["stats"] = [[{"elapsed":"00:01:05","fail":0,"label":"All Tests","pass":4,"skip":0}],[],[{"elapsed":"00:01:06","fail":0,"id":"s1","label":"Cases","name":"Cases","pass":4,"skip":0},{"elapsed":"00:01:06","fail":0,"id":"s1-s1","label":"Cases.Scenarii","name":"Scenarii","pass":4,"skip":0}]];
+window.output["stats"] = [[{"elapsed":"00:01:23","fail":0,"label":"All Tests","pass":4,"skip":0}],[],[{"elapsed":"00:01:23","fail":0,"id":"s1","label":"Cases","name":"Cases","pass":4,"skip":0},{"elapsed":"00:01:23","fail":0,"id":"s1-s1","label":"Cases.Scenarii","name":"Scenarii","pass":4,"skip":0}]];
 </script>
 <script type="text/javascript">
 window.output["errors"] = [];
 </script>
 <script type="text/javascript">
-window.output["baseMillis"] = 1647311630696;
+window.output["baseMillis"] = 1701395711834;
 </script>
 <script type="text/javascript">
-window.output["generated"] = 65751;
+window.output["generated"] = 83474;
 </script>
 <script type="text/javascript">
 window.output["expand_keywords"] = null;
@@ -1924,8 +1931,8 @@ function makeElementVisible(id) {
         util.map(ids, expandElementWithId);
         if (ids.length) {
             expandFailed(window.testdata.findLoaded(util.last(ids)));
-            window.location.hash = '';
             window.location.hash = id;
+            document.getElementById(id).scrollIntoView();
             highlightLinkTarget();
         }
     });
@@ -2123,7 +2130,7 @@ function addExecutionLog(main) {
     <div class="element-header closed" onclick="toggleKeyword('${id}')">
       <div class="element-header-left" title="${type}  {{if name}}{{html fullName}}  {{/if}}[${status}]">
         <span class="elapsed" title="Elapsed time">${times.elapsedTime}</span>
-        <span class="label keyword ${status.toLowerCase()}">${type}</span>
+        <span class="label ${status.toLowerCase()}">${type}</span>
         <span>{{html assign}}</span>
         <span class="name"><span class="parent-name">{{html libname}}{{if libname}} . {{/if}}</span>{{html name}}</span>
         <span class="arg">{{html arguments}}</span>
@@ -2131,7 +2138,7 @@ function addExecutionLog(main) {
       <div class="element-header-right" onclick="stopPropagation(event)">
         <a class="expand" title="Expand all" href="javascript:expandAll('${id}')"></a>
         <a class="collapse" title="Collapse all" href="javascript:collapseAll('${id}')"></a>
-        <a class="link" title="Link to this keyword" href="#${id}" onclick="makeElementVisible('${id}')"></a>
+        <a class="link" title="Link to this item" href="#${id}" onclick="makeElementVisible('${id}')"></a>
       </div>
       <div class="element-header-toggle" title="Toggle visibility"></div>
     </div>
