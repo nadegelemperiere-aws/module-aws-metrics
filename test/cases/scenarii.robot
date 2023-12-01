@@ -1,7 +1,5 @@
 # -------------------------------------------------------
-# TECHNOGIX
-# -------------------------------------------------------
-# Copyright (c) [2021] Technogix.io
+# Copyright (c) [2021] Nadege Lemperiere
 # All rights reserved
 # -------------------------------------------------------
 # Robotframework test suite for module
@@ -13,19 +11,19 @@
 
 *** Settings ***
 Documentation   A test case to check metrics creation
-Library         technogix_iac_keywords.terraform
-Library         technogix_iac_keywords.keepass
-Library         technogix_iac_keywords.cloudwatch
-Library         technogix_iac_keywords.sns
+Library         aws_iac_keywords.terraform
+Library         aws_iac_keywords.keepass
+Library         aws_iac_keywords.cloudwatch
+Library         aws_iac_keywords.sns
 Library         ../keywords/data.py
 Library         OperatingSystem
 
 *** Variables ***
 ${KEEPASS_DATABASE}                 ${vault_database}
 ${KEEPASS_KEY_ENV}                  ${vault_key_env}
-${KEEPASS_PRINCIPAL_KEY_ENTRY}      /engineering-environment/aws/aws-principal-access-key
-${KEEPASS_PRINCIPAL_USER_ENTRY}     /engineering-environment/aws/aws-principal-credentials
-${KEEPASS_ACCOUNT_ENTRY}            /engineering-environment/aws/aws-account
+${KEEPASS_PRINCIPAL_KEY_ENTRY}      /aws/aws-principal-access-key
+${KEEPASS_PRINCIPAL_USER_ENTRY}     /aws/aws-principal-credentials
+${KEEPASS_ACCOUNT_ENTRY}            /aws/aws-account
 ${REGION}                           eu-west-1
 
 *** Test Cases ***

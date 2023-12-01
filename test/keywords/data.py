@@ -1,8 +1,6 @@
 # -------------------------------------------------------
-# TECHNOGIX 
-# -------------------------------------------------------
-# Copyright (c) [2021] Technogix.io
-# All rights reserved 
+# Copyright (c) [2021] Naege Lemperiere
+# All rights reserved
 # -------------------------------------------------------
 # Keywords to create data for module test
 # -------------------------------------------------------
@@ -31,7 +29,7 @@ def load_metrics_test_data(loggroup, metrics, alarms, notifications, key) :
     if len(notifications['id']) != 0 : raise Exception(str(len(notifications['id'])) + ' notifications created instead of 0')
     if len(notifications['subscriptions']) != 0 : raise Exception(str(len(notifications['subscriptions'])) + ' subscriptions created instead of 0')
     if len(key['id']) != 0 : raise Exception(str(len(key['id'])) + ' keys created instead of 0')
-    
+
     result = {}
     result['metrics'] = []
 
@@ -44,20 +42,20 @@ def load_metrics_test_data(loggroup, metrics, alarms, notifications, key) :
         {'metricName': 'test', 'metricNamespace': 'test', 'metricValue': '1', 'unit': 'Count'}
     ]
     result['metrics'][0]['data']['logGroupName'] = loggroup['name']
-       
+
     logger.debug(dumps(result))
 
     return result
-     
+
 @keyword('Load Alarms Test Data')
 def load_alarms_test_data(loggroup, metrics, alarms, notifications, key) :
-    
+
     if len(alarms['arn']) != 1 : raise Exception(str(len(alarms['arn'])) + ' alarms created instead of 1')
     if len(metrics['id']) != 1 : raise Exception(str(len(metrics['id'])) + ' metrics created instead of 1')
     if len(notifications['id']) != 0 : raise Exception(str(len(notifications['id'])) + ' notifications created instead of 0')
     if len(notifications['subscriptions']) != 0 : raise Exception(str(len(notifications['subscriptions'])) + ' subscriptions created instead of 0')
     if len(key['id']) != 0 : raise Exception(str(len(key['id'])) + ' keys created instead of 0')
-    
+
     result = {}
     result['metrics'] = []
     result['alarms'] = []
@@ -87,21 +85,21 @@ def load_alarms_test_data(loggroup, metrics, alarms, notifications, key) :
     result['alarms'][0]['data']['EvaluationPeriods'] = 1
     result['alarms'][0]['data']['Threshold'] = 1.0
     result['alarms'][0]['data']['ComparisonOperator'] = 'GreaterThanOrEqualToThreshold'
-       
+
     logger.debug(dumps(result))
 
     return result
-     
+
 @keyword('Load Notifications Test Data')
 def load_notifications_test_data(loggroup, metrics, alarms, notifications, key, account) :
-    
+
     if len(alarms['arn']) != 1 : raise Exception(str(len(alarms['arn'])) + ' alarms created instead of 1')
     if len(metrics['id']) != 1 : raise Exception(str(len(metrics['id'])) + ' metrics created instead of 1')
     if len(notifications['id']) != 1 : raise Exception(str(len(notifications['id'])) + ' notifications created instead of 1')
     if len(notifications['subscriptions']) != 1 : raise Exception(str(len(notifications['subscriptions'])) + ' subscriptions created instead of 1')
     if len(key['id']) != 1 : raise Exception(str(len(key['id'])) + ' keys created instead of 1')
-    
-    
+
+
     result = {}
     result['metrics'] = []
     result['alarms'] = []
@@ -149,7 +147,7 @@ def load_notifications_test_data(loggroup, metrics, alarms, notifications, key, 
     result['topics'][0]['name'] = 'topic'
     result['topics'][0]['data'] = {}
     result['topics'][0]['data']['TopicArn'] = notifications['arn'][0]
-    result['topics'][0]['data']['Attributes'] = {} 
+    result['topics'][0]['data']['Attributes'] = {}
     result['topics'][0]['data']['Attributes']['Policy'] = {'Version': '2012-10-17', 'Statement': [{'Effect': 'Allow', 'Principal': {'Service': 'cloudwatch.amazonaws.com'}, 'Action': 'sns:Publish', 'Resource': 'arn:aws:sns:eu-west-1:833168553325:test-test-alarm'}]}
     result['topics'][0]['data']['Attributes']['LambdaSuccessFeedbackRoleArn'] = loggroup['role']
     result['topics'][0]['data']['Attributes']['LambdaFailureFeedbackRoleArn'] = loggroup['role']
@@ -178,7 +176,7 @@ def load_notifications_test_data(loggroup, metrics, alarms, notifications, key, 
             },
             'disableSubscriptionOverrides' : False,
             'defaultThrottlePolicy'     : {
-                'maxReceivesPerSecond' : 1 
+                'maxReceivesPerSecond' : 1
             }
         }
     }
@@ -195,7 +193,7 @@ def load_notifications_test_data(loggroup, metrics, alarms, notifications, key, 
             },
             'disableSubscriptionOverrides' : False,
             'defaultThrottlePolicy'     : {
-                'maxReceivesPerSecond' : 1 
+                'maxReceivesPerSecond' : 1
             }
         }
     }
